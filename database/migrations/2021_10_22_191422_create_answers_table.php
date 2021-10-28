@@ -21,6 +21,7 @@ class CreateAnswersTable extends Migration
             $table->timestamps();
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('flashcard_id')->references('id')->on('flashcards');
+            $table->unique(['user_id', 'flashcard_id']);
         });
     }
 
