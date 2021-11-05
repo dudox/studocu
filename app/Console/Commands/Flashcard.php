@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Choice;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Helper\Table;
 use App\FlashcardGame\FlashcardGameInterface;
@@ -70,11 +71,13 @@ class Flashcard extends Command
                     $question = $this->getValidInput(
                         "Enter a new flashcard question"
                     );
-                    $answer = $this->getValidInput("Answer");
+                    $answers = explode(',', $this->getValidInput("Write all the choices separated by a comma. The first one is the correct one"));
+                    $correctChoice = array_shift($answers);
 
                     $this->quizFlashcardGame->createFlashcard(
                         $question,
-                        $answer
+                        $correctChoice,
+                        $answers
                     );
 
                     break;
@@ -130,11 +133,20 @@ class Flashcard extends Command
                     } elseif ($flashcard["is_correct"] === "Correct") {
                         $this->error("Flashcard already answered correctly.");
                     } else {
-                        $answer = $this->getValidInput($flashcard["question"]);
-                        $isCorrectAnswer = $this->quizFlashcardGame->validateAnswer(
-                            $flashcardId,
-                            $answer
+                        $choices = Choice::where('flashcard_id', $flashcardId)->get();
+                        $userChoice = $this->choice(
+                            $flashcard["question"],
+                            $choices->pluck('title')->all()
                         );
+
+                        $answer = $choices->firstWhere('title', $userChoice);
+                        $isCorrectAnswer = $answer->correct;
+
+                        $this->quizFlashcardGame->validateAnswer(
+                            $flashcardId,
+                            $isCorrectAnswer
+                        );
+
                         $this->info(
                             $isCorrectAnswer
                                 ? "Correct Answer"

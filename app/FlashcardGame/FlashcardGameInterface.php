@@ -19,7 +19,7 @@ interface FlashcardGameInterface
      * @param  string  $answer
      * @return void
      */
-    public function createFlashcard(string $question, string $answer): void;
+    public function createFlashcard(string $question, string $correctAnswer, array $answers): void;
 
     /**
      * Get all flashcards from DB
@@ -43,7 +43,7 @@ interface FlashcardGameInterface
      * @param  string  $answer
      * @return bool
      */
-    public function validateAnswer(int $flashcardId, string $answer): bool;
+    public function validateAnswer(int $flashcardId, bool $isCorrectAnswer): bool;
 
     /**
      * Get stats for current user's flashcard game

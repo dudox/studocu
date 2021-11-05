@@ -3,6 +3,7 @@
 namespace App\FlashcardGame\QuizFlashcardGame;
 
 use App\FlashcardGame\FlashcardGameInterface;
+use App\Models\Choice;
 use App\Models\Flashcard;
 use App\Models\Answer;
 use App\Models\User;
@@ -35,12 +36,17 @@ class QuizFlashcardGame implements FlashcardGameInterface
      * @param  string  $answer
      * @return void
      */
-    public function createFlashcard(string $question, string $answer): void
+    public function createFlashcard(string $question, string $correctAnswer, array $answers): void
     {
         $flashcard = new Flashcard();
         $flashcard->question = trim($question);
-        $flashcard->answer = trim($answer);
+        $flashcard->answer = trim($correctAnswer);
         $flashcard->save();
+
+        (new Choice(['title' => $correctAnswer, 'correct' => true, 'flashcard_id' => $flashcard->id]))->save();
+        foreach ($answers as $choice) {
+            (new Choice(['title' => $choice, 'correct' => false, 'flashcard_id' => $flashcard->id]))->save();
+        }
     }
 
     /**
@@ -68,19 +74,14 @@ class QuizFlashcardGame implements FlashcardGameInterface
      * Validate and save answer for a flashcard
      *
      * @param  int     $flashcardId
-     * @param  string  $answer
+     * @param  bool  $isCorrectAnswer
      * @return bool
      */
-    public function validateAnswer(int $flashcardId, string $answer): bool
+    public function validateAnswer(int $flashcardId, bool $isCorrectAnswer): bool
     {
         $flashcard = $this->getById($flashcardId);
-        $isCorrectAnswer = false;
 
         if (!empty($flashcard)) {
-            // Validate if answer is correct
-            $isCorrectAnswer =
-                strtolower($flashcard["answer"]) === strtolower(trim($answer));
-
             // Upsert the answer in DB
             Answer::updateOrCreate(
                 ["user_id" => $this->user->id, "flashcard_id" => $flashcardId],
@@ -91,8 +92,6 @@ class QuizFlashcardGame implements FlashcardGameInterface
                 ]
             );
         }
-
-        return $isCorrectAnswer;
     }
 
     /**
